@@ -30,21 +30,46 @@ class Controller {
   }
   static async getSearchesByKeyword(req, res) {
     const keyword = req.query.keyword;
-    console.log(req.query);
-    try {
-      const result = await Get_Search.findAll({
-        where: {
-          keyword,
-        },
-        include: {
-          model: Tweet,
-        },
-        limit: 100,
-        order: [["createdAt", "DESC"]],
-      });
-      res.status(200).json(result);
-    } catch (err) {
-      res.status(500).json({ message: "Internal Server Error" });
+    const size = req.query.size;
+    const page = req.query.page ? req.query.page : 0;
+    if (!keyword) {
+      return res.status(400).json({ message: "keyword is required" });
+    }
+    const { limit, offset } = getPagination(page, size);
+    if (!page) {
+      try {
+        const result = await Get_Search.findAll({
+          where: {
+            keyword,
+          },
+          include: {
+            model: Tweet,
+          },
+          limit: size ? size : 10,
+          order: [["createdAt", "DESC"]],
+        });
+        res.status(200).json(result);
+      } catch (err) {
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    } else {
+      try {
+        const result = await Get_Search.findAndCountAll({
+          where: {
+            keyword,
+          },
+          include: {
+            model: Tweet,
+          },
+          limit,
+          offset,
+          order: [["createdAt", "DESC"]],
+        });
+        const response = getPagingData(result, page, limit);
+        res.status(200).json(response);
+      } catch (err) {
+        res.status(500).json({ message: "Internal Server Error" });
+      }
     }
   }
   static async getTweetsByKeyword(req, res) {
@@ -69,21 +94,22 @@ class Controller {
         console.log(err.message);
         return res.status(500).json({ message: "Internal Server Error" });
       }
-    }
-    try {
-      const result = await Tweet.findAndCountAll({
-        where: {
-          keyword_used: keyword,
-        },
-        limit,
-        offset,
-        order: [["createdAt", "DESC"]],
-      });
-      const response = getPagingData(result, page, limit);
-      return res.status(200).json(response);
-    } catch (err) {
-      console.log(err.message);
-      return res.status(500).json({ message: "Internal Server Error" });
+    } else {
+      try {
+        const result = await Tweet.findAndCountAll({
+          where: {
+            keyword_used: keyword,
+          },
+          limit,
+          offset,
+          order: [["createdAt", "DESC"]],
+        });
+        const response = getPagingData(result, page, limit);
+        return res.status(200).json(response);
+      } catch (err) {
+        console.log(err.message);
+        return res.status(500).json({ message: "Internal Server Error" });
+      }
     }
   }
   static async firstTweetByKeyword(req, res) {

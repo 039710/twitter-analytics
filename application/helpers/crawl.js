@@ -104,16 +104,16 @@ const checkAuthor = async (tweet) => {
   }
 };
 
-const job = new CronJob(
-  // "*/5 * * * * *",
-  "*/20 * * * * *",
-  async function () {
-    await crawl("terserahpolisi");
-    await crawl("periksaanaklurah");
-  },
-  null,
-  false,
-  "America/Los_Angeles"
-);
-
-module.exports = job;
+// const job = new CronJob(
+//   // "*/5 * * * * *",
+//   "*/20 * * * * *",
+//   async function () {
+//     await crawl("terserahpolisi");
+//     await crawl("periksaanaklurah");
+//   },
+//   null,
+//   false,
+//   "America/Los_Angeles"
+// );
+const allSchedulers = {};
+module.exports = { allSchedulers, crawl };
