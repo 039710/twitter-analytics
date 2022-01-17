@@ -11,7 +11,8 @@ const twitterApi = axios.create({
 // "1 * * * * *" => setiap menit
 // "*/30 * * * * *" => setiap 30 detik
 
-const crawl = async (keyword) => {
+const crawl = async (keyword,max_result) => {
+  console.log(max_result, "ini max_result")
   try {
     const toConvertJson = [
       "entities",
@@ -24,7 +25,7 @@ const crawl = async (keyword) => {
     const result = await twitterApi.get("/tweets/search/recent", {
       params: {
         query: keyword,
-        max_results: 10,
+        max_results : max_result,
         "tweet.fields":
           "attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,possibly_sensitive,referenced_tweets,reply_settings,source,text,withheld,public_metrics",
         "user.fields":
@@ -71,7 +72,7 @@ const crawl = async (keyword) => {
     await Promise.allSettled(promiseUpdate);
     await Tweet.bulkCreate(filteredTweets);
   } catch (err) {
-    console.error(err.message);
+    console.error(err.message,"<<");
   }
 };
 const checkAuthor = async (tweet) => {
@@ -100,6 +101,7 @@ const checkAuthor = async (tweet) => {
       await Author.create(author);
     }
   } catch (err) {
+    console.error(err.message,"<");
     return Promise.reject("err");
   }
 };

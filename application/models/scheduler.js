@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       status: DataTypes.STRING,
+      max_result: DataTypes.INTEGER,
       minute: DataTypes.INTEGER,
     },
     {

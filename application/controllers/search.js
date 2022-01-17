@@ -40,7 +40,9 @@ class Controller {
       try {
         const result = await Get_Search.findAll({
           where: {
-            keyword,
+            keyword:{
+              [Sequelize.Op.iLike]: `%${keyword}%`,
+            }
           },
           include: {
             model: Tweet,
@@ -48,7 +50,11 @@ class Controller {
           limit: size ? size : 10,
           order: [["createdAt", "DESC"]],
         });
-        res.status(200).json(result);
+      
+        if (result.length == 0){
+          return res.status(404).json({message : "Not found"})
+        }
+        return res.status(200).json(result);
       } catch (err) {
         res.status(500).json({ message: "Internal Server Error" });
       }
@@ -56,7 +62,9 @@ class Controller {
       try {
         const result = await Get_Search.findAndCountAll({
           where: {
-            keyword,
+            keyword:{
+              [Sequelize.Op.iLike]: `%${keyword}%`,
+            }
           },
           include: {
             model: Tweet,
@@ -65,9 +73,12 @@ class Controller {
           offset,
           order: [["createdAt", "DESC"]],
         });
+        if(result.rows.length == 0)
+          return res.status(404).json({message : "Not found"})
         const response = getPagingData(result, page, limit);
         res.status(200).json(response);
       } catch (err) {
+        console.log('err',err)
         res.status(500).json({ message: "Internal Server Error" });
       }
     }
@@ -84,11 +95,16 @@ class Controller {
       try {
         const result = await Tweet.findAll({
           where: {
-            keyword_used: keyword,
+            text:{
+              [Sequelize.Op.iLike]: `%${keyword}%`,
+            }
           },
+
           limit: size ? size : 10,
           order: [["createdAt", "DESC"]],
         });
+        if(result.length == 0)
+          return res.status(404).json({message : "Not found"})
         res.status(200).json(result);
       } catch (err) {
         console.log(err.message);
@@ -98,12 +114,16 @@ class Controller {
       try {
         const result = await Tweet.findAndCountAll({
           where: {
-            keyword_used: keyword,
+            text:{
+              [Sequelize.Op.iLike]: `%${keyword}%`,
+            }
           },
           limit,
           offset,
           order: [["createdAt", "DESC"]],
         });
+        if(result.rows.length == 0)
+          return res.status(404).json({message : "Not found"})
         const response = getPagingData(result, page, limit);
         return res.status(200).json(response);
       } catch (err) {
@@ -127,7 +147,9 @@ class Controller {
         order: [["createdAt", "ASC"]],
         limit: 1,
       });
-      res.status(200).json(result);
+      if(!result)
+        return res.status(404).json({message : "Not found"})
+      return res.status(200).json(result);
     } catch (err) {
       console.log(err.message);
       return res.status(500).json({ message: "Internal Server Error" });
@@ -148,6 +170,8 @@ class Controller {
         order: [["createdAt", "DESC"]],
         limit: 1,
       });
+      if(!result)
+        return res.status(404).json({message : "Not found"})
       res.status(200).json(result);
     } catch (err) {
       console.log(err.message);
@@ -171,6 +195,8 @@ class Controller {
         },
         order: [["createdAt", "ASC"]],
       });
+      if(!firstCreated)
+        return res.status(404).json({message : "Not found"})
       const lastCreated = await Tweet.findOne({
         where: {
           text: {
@@ -179,7 +205,6 @@ class Controller {
         },
         order: [["createdAt", "desc"]],
       });
-
       const { created_time: startTime } = firstCreated;
       const { created_time: endTime } = lastCreated;
       let duration =
@@ -205,16 +230,23 @@ class Controller {
     const keyword = req.query.keyword;
     const start_date = req.query.start_date;
     const end_date = req.query.end_date;
+    console.log(new Date(start_date),new Date(end_date));
     const query = {
       where: {
         text: {
           [Sequelize.Op.iLike]: `%${keyword}%`,
         },
       },
-    };
+      order  : [["createdAt", "DESC"]],
+    }
     if (!keyword) {
       return res.status(400).json({ message: "Please provide a keyword" });
     }
+    if(new Date(start_date) > new Date(end_date)){
+      return res.status(400).json({ message: "Start date must be before end date" });
+    }
+    if(new Date(start_date) == "Invalid Date" || new Date(end_date) == "Invalid Date")
+      return res.status(400).json({ message: "Invalid Date" }); 
     if (!start_date && end_date) {
       return res.status(400).json({ message: "Please provide a start date" });
     }
@@ -255,9 +287,11 @@ class Controller {
             tweet[column] = JSON.parse(tweet[column]);
           }
           if (column == "entities") {
-            tweet.entities.hashtags.forEach((hashtag) => {
-              all_hastaghs.push(hashtag.tag);
-            });
+            if(tweet.entities && tweet.entities.hashtags){
+              tweet.entities.hashtags.forEach((hashtag) => {
+                all_hastaghs.push(hashtag.tag);
+              });
+            }
           }
         });
         // count sources
@@ -277,28 +311,30 @@ class Controller {
           languages[tweet.lang] = 1;
         }
         // count words
-        const all_words = tweet.text.split(" ");
-        all_words.forEach((word) => {
-          const filter = ["@", "http", "\n", "rt"];
-          let flag = true;
-          filter.forEach((filterWord) => {
-            if (word.toLowerCase().includes(filterWord)) {
-              flag = false;
-            }
-          });
-          if (flag) {
-            const filtered_word = word
-              .replace(/[^a-zA-Z0-9]/g, "")
-              .toLowerCase();
-            if (filtered_word.length > 1) {
-              if (word_clouds[filtered_word]) {
-                word_clouds[filtered_word] += 1;
-              } else {
-                word_clouds[filtered_word] = 1;
+        if(tweet.text) {
+          const all_words = tweet.text.split(" ");
+          all_words.forEach((word) => {
+            const filter = ["@", "http", "\n", "rt"];
+            let flag = true;
+            filter.forEach((filterWord) => {
+              if (word.toLowerCase().includes(filterWord)) {
+                flag = false;
+              }
+            });
+            if (flag) {
+              const filtered_word = word
+                .replace(/[^a-zA-Z]/g, "")
+                .toLowerCase();
+              if (filtered_word.length > 1 ) {
+                if (word_clouds[filtered_word]) {
+                  word_clouds[filtered_word] += 1;
+                } else {
+                  word_clouds[filtered_word] = 1;
+                }
               }
             }
-          }
-        });
+          });
+        }
         // count tweets type
         if (tweet.referenced_tweets) {
           tweet.referenced_tweets.forEach((ref) => {
@@ -310,7 +346,7 @@ class Controller {
           });
         }
         // count mentions
-        if (tweet.entities.mentions) {
+        if (tweet.entities && tweet.entities.mentions) {
           total_mentions += tweet.entities.mentions.length;
         }
       });
@@ -335,14 +371,26 @@ class Controller {
       const unique_hashtags = [...new Set(all_hastaghs)];
       total_tweets = result.length;
       // get frequency of tweets
-      const frequency = {};
+      const frequency = [];
       result.forEach((tweet) => {
-        if (frequency[tweet.created_time]) {
-          frequency[tweet.created_time] += 1;
-        } else {
-          frequency[tweet.created_time] = 1;
+        const temp = {
+          'tweet_id' : tweet.id,
+          'author_id' : tweet.author_id,
+          'public metrics' : 0
         }
+        if (temp[tweet.created_time]) {
+          temp[tweet.created_time] += 1;
+        } else {
+          temp[tweet.created_time] = 1;
+        }
+        Object.keys(tweet.public_metrics).forEach((key) => {
+            temp['public metrics'] = temp['public metrics'] + tweet.dataValues['public_metrics'][key]
+        })
+        frequency.push(temp)
       });
+      frequency.sort((a, b) => {
+          return new Date(a.created_time) - new Date(b.created_time);
+      })
       res.status(200).json({
         total_tweets,
         total_mentions,
@@ -353,8 +401,72 @@ class Controller {
         word_clouds,
         languages,
         frequency,
-        result,
       });
+    } catch (err) {
+      console.log(err.message);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+  static async topTweetByKeyword(req,res){
+    const keyword = req.query.keyword;
+    const start_date = req.query.start_date;
+    const end_date = req.query.end_date;
+    const query = {
+      where: {
+        text: {
+          [Sequelize.Op.iLike]: `%${keyword}%`,
+        },
+        
+      },
+      include : {
+          model : Author,
+        },
+      limit : 20
+    };
+    if (!keyword) {
+      return res.status(400).json({ message: "Please provide a keyword" });
+    }
+    if (!start_date && end_date) {
+      return res.status(400).json({ message: "Please provide a start date" });
+    }
+    if (start_date && !end_date) {
+      query.where.created_time = {
+        [Sequelize.Op.gte]: start_date,
+      };
+    }
+    if (start_date && end_date) {
+      query.where.createdAt = {
+        [Sequelize.Op.between]: [start_date, end_date],
+      };
+    }
+    try {
+      let result = await Tweet.findAll(
+        query,
+        
+      );
+      if (!result.length)
+        return res.status(404).json({ message: "No result found" });
+      result.forEach((tweet) => {
+        toParseJSON.forEach((column) => {
+          if (tweet[column]) {
+            tweet[column] = JSON.parse(tweet[column]);
+          }
+          if(column === "public_metrics"){
+            tweet.dataValues.total_metrics = 0
+            Object.keys(tweet[column]).forEach((key) => {
+              tweet.dataValues.total_metrics += tweet.dataValues[column][key];
+            })
+          }
+        });
+        tweet.created_time = new Date(tweet.created_time).toLocaleTimeString();
+      });
+      result.sort((a, b) => {
+        return b.dataValues.total_metrics - a.dataValues.total_metrics
+        })
+
+      res.status(200).json(
+        result[0],
+      );
     } catch (err) {
       console.log(err.message);
       return res.status(500).json({ message: "Internal Server Error" });

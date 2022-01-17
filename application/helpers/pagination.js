@@ -10,7 +10,7 @@ const getPagingData = (data, page, limit) => {
   const currentPage = page ? +page : 0;
   const totalPages = Math.ceil(totalItems / limit);
 
-  return { totalItems, tutorials, totalPages, currentPage };
+  return { totalItems, data, totalPages, currentPage };
 };
 
 module.exports = { getPagination, getPagingData };

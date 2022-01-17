@@ -16,7 +16,9 @@ module.exports = {
       minute: {
         type: Sequelize.INTEGER,
       },
-
+      max_result :{
+        type: Sequelize.INTEGER,
+      },
       status: {
         type: Sequelize.STRING,
       },
