@@ -49,8 +49,9 @@ const crawl = async (keyword, max_result) => {
       tweet.created_time = tweet.created_at;
       if (tweet.conversation_id !== tweet.id) {
         toLookUpTweets.push(tweet);
+      } else {
+        toInsertTweets.push(tweet);
       }
-      toInsertTweets.push(tweet);
     });
     const promiseCheckAuthor = [];
     const promiseInsertTweetsLookUp = [];

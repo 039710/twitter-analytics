@@ -6,17 +6,15 @@ class Controller {
   static async getAll(req, res) {
     try {
       const data = await Scheduler.findAll();
-      if(data.length === 0) return res.status(200).json({message: "No scheduler found"});
+      if (data.length === 0)
+        return res.status(200).json({ message: "No scheduler found" });
       data.forEach((scheduler) => {
         if (scheduler.status === "active") {
           const isFound = TaskManager.get(scheduler.keyword);
           if (!isFound) {
-            const task = cron.schedule(
-              `*/${scheduler.minute} * * * * `,
-              () => {
-                crawl(scheduler.keyword,scheduler.max_result);
-              }
-            );
+            const task = cron.schedule(`*/${scheduler.minute} * * * * `, () => {
+              crawl(scheduler.keyword, scheduler.max_result);
+            });
             TaskManager.add(scheduler.keyword, task);
           } else {
             TaskManager.get(scheduler.keyword).task.start();
@@ -26,12 +24,9 @@ class Controller {
           if (isFound) {
             TaskManager.get(scheduler.keyword).task.stop();
           } else {
-            const task = cron.schedule(
-              `*/${scheduler.minute} * * * * `,
-              () => {
-                crawl(scheduler.keyword,scheduler.max_result);
-              }
-            );
+            const task = cron.schedule(`*/${scheduler.minute} * * * * `, () => {
+              crawl(scheduler.keyword, scheduler.max_result);
+            });
             TaskManager.add(scheduler.keyword, task);
             task.stop();
           }
@@ -52,11 +47,11 @@ class Controller {
     if (minute < 60 && keyword) {
       try {
         const task = cron.schedule(`*/${minute} * * * *`, async () => {
-          crawl(keyword);
+          crawl(keyword, max_result);
         });
-     
+
         TaskManager.add(keyword, task);
-        const data = await Scheduler.create({ keyword, minute,max_result });
+        const data = await Scheduler.create({ keyword, minute, max_result });
         res.status(201).json({ message: "Scheduler created", data });
       } catch (error) {
         res.status(500).json({ message: error.message });
@@ -84,7 +79,7 @@ class Controller {
         const task = cron.schedule(
           `*/${scheduler.minute} * * * * `,
           async () => {
-            crawl(scheduler.keyword,scheduler.max_result);
+            crawl(scheduler.keyword, scheduler.max_result);
           }
         );
         if (status === "active") {
