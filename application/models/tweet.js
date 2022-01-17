@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       Tweet.belongsTo(models.Author, {
         foreignKey: "author_id",
       });
+      Tweet.belongsTo(models.Tweet, {
+        foreignKey: "conversation_id",
+        as: "conversation",
+      });
     }
   }
   Tweet.init(
