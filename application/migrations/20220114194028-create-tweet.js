@@ -11,12 +11,6 @@ module.exports = {
           args: true,
           msg: "The id must be unique",
         },
-        validate: {
-          unique: {
-            args: true,
-            msg: "The id must be unique",
-          },
-        },
       },
       keyword_used: {
         type: Sequelize.STRING,
@@ -43,6 +37,10 @@ module.exports = {
       },
       conversation_id: {
         type: Sequelize.BIGINT,
+        // references: {
+        //   model: "Tweets",
+        //   key: "id",
+        // },
       },
       created_time: {
         type: Sequelize.TEXT,

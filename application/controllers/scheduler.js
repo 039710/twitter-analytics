@@ -46,12 +46,12 @@ class Controller {
     }
     if (minute < 60 && keyword) {
       try {
+        const data = await Scheduler.create({ keyword, minute, max_result });
         const task = cron.schedule(`*/${minute} * * * *`, async () => {
           crawl(keyword, max_result);
         });
 
         TaskManager.add(keyword, task);
-        const data = await Scheduler.create({ keyword, minute, max_result });
         res.status(201).json({ message: "Scheduler created", data });
       } catch (error) {
         res.status(500).json({ message: error.message });

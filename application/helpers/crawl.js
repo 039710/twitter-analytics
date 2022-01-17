@@ -49,9 +49,8 @@ const crawl = async (keyword, max_result) => {
       tweet.created_time = tweet.created_at;
       if (tweet.conversation_id !== tweet.id) {
         toLookUpTweets.push(tweet);
-      } else {
-        toInsertTweets.push(tweet);
       }
+      toInsertTweets.push(tweet);
     });
     const promiseCheckAuthor = [];
     const promiseInsertTweetsLookUp = [];
@@ -102,7 +101,7 @@ const insertSingleTweet = async (tweet, keyword, search_id) => {
             "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld",
         },
       });
-      const toInsertTweet = result.data.data;
+      const toInsertTweet = await result.data.data;
       toConvertJson.forEach((column) => {
         if (toInsertTweet[column]) {
           toInsertTweet[column] = JSON.stringify(toInsertTweet[column]);
@@ -111,17 +110,18 @@ const insertSingleTweet = async (tweet, keyword, search_id) => {
       toInsertTweet.keyword_used = keyword;
       toInsertTweet.search_id = search_id;
       toInsertTweet.created_time = toInsertTweet.created_at;
-      isFound = await Tweet.findOne({
-        where: {
-          id: toInsertTweet.id,
-        },
-      });
-      if (!isFound) {
-        if (toInsertTweet.conversation_id !== toInsertTweet.id) {
-          await checkAuthor(toInsertTweet);
-          await insertSingleTweet(toInsertTweet, keyword, search_id);
-        } else {
-          await checkAuthor(toInsertTweet);
+
+      if (toInsertTweet.conversation_id !== toInsertTweet.id) {
+        // await checkAuthor(toInsertTweet);
+        // await insertSingleTweet(toInsertTweet, keyword, search_id);
+      } else {
+        await checkAuthor(toInsertTweet);
+        let found = await Tweet.findOne({
+          where: {
+            id: toInsertTweet.id,
+          },
+        });
+        if (!found) {
           await Tweet.create(toInsertTweet);
         }
       }

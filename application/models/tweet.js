@@ -15,10 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       Tweet.belongsTo(models.Author, {
         foreignKey: "author_id",
       });
-      Tweet.belongsTo(models.Tweet, {
-        foreignKey: "conversation_id",
-        as: "conversation",
-      });
+      // Tweet.belongsTo(models.Tweet, {
+      //   foreignKey: "conversation_id",
+      //   as: "conversation",
+      // });
     }
   }
   Tweet.init(
@@ -30,12 +30,6 @@ module.exports = (sequelize, DataTypes) => {
         unique: {
           args: true,
           msg: "The id must be unique",
-        },
-        validate: {
-          unique: {
-            args: true,
-            msg: "The id must be unique",
-          },
         },
       },
       keyword_used: DataTypes.STRING,
