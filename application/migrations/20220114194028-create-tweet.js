@@ -37,10 +37,11 @@ module.exports = {
       },
       conversation_id: {
         type: Sequelize.BIGINT,
-        // references: {
-        //   model: "Tweets",
-        //   key: "id",
-        // },
+        allowNull: true,
+        references: {
+          model: "Tweets",
+          key: "id",
+        },
       },
       created_time: {
         type: Sequelize.TEXT,

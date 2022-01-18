@@ -8,6 +8,17 @@ const twitterApi = axios.create({
     Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
   },
 });
+function sleep(ms) {
+    const now = Date.now();
+    const limit = now + ms;
+    let execute = true;
+    while (execute) {
+        if (limit < Date.now()) {
+            execute = false;
+        }
+    }
+    return;
+  }
 
 // "1 * * * * *" => setiap menit
 // "*/30 * * * * *" => setiap 30 detik
@@ -47,9 +58,13 @@ const crawl = async (keyword, max_result) => {
       tweet.keyword_used = keyword;
       tweet.search_id = search_id;
       tweet.created_time = tweet.created_at;
-      if (tweet.conversation_id !== tweet.id) {
+       if (tweet.conversation_id !== tweet.id) {
         toLookUpTweets.push(tweet);
       }
+      if (tweet.conversation_id == tweet.id) {
+        tweet.conversation_id = null;
+      }
+     
       toInsertTweets.push(tweet);
     });
     const promiseCheckAuthor = [];
@@ -58,9 +73,11 @@ const crawl = async (keyword, max_result) => {
       promiseInsertTweetsLookUp.push(
         insertSingleTweet(tweet, keyword, search_id)
       );
+      sleep(200)
     });
     toInsertTweets.forEach((tweet, idx) => {
       promiseCheckAuthor.push(checkAuthor(tweet));
+      sleep(200)
     });
     await Promise.allSettled(promiseCheckAuthor);
     await Promise.allSettled(promiseInsertTweetsLookUp);
@@ -80,6 +97,7 @@ const crawl = async (keyword, max_result) => {
       }
     });
     await Promise.allSettled(promiseUpdate);
+    sleep(200)
     await Tweet.bulkCreate(filteredTweets);
   } catch (err) {
     console.error(err.message, "<< bulk create");
