@@ -1,7 +1,8 @@
 const CronJob = require("cron").CronJob;
+const cron = require("node-cron");
 const Sequelize = require("sequelize");
 const axios = require("axios");
-const { Tweet, Get_Search, Author } = require("../models");
+const { Tweet, Get_Search, Author, Trend } = require("../models");
 const twitterApi = axios.create({
   baseURL: "https://api.twitter.com/2",
   headers: {
@@ -9,16 +10,16 @@ const twitterApi = axios.create({
   },
 });
 function sleep(ms) {
-    const now = Date.now();
-    const limit = now + ms;
-    let execute = true;
-    while (execute) {
-        if (limit < Date.now()) {
-            execute = false;
-        }
+  const now = Date.now();
+  const limit = now + ms;
+  let execute = true;
+  while (execute) {
+    if (limit < Date.now()) {
+      execute = false;
     }
-    return;
   }
+  return;
+}
 
 // "1 * * * * *" => setiap menit
 // "*/30 * * * * *" => setiap 30 detik
@@ -58,13 +59,13 @@ const crawl = async (keyword, max_result) => {
       tweet.keyword_used = keyword;
       tweet.search_id = search_id;
       tweet.created_time = tweet.created_at;
-       if (tweet.conversation_id !== tweet.id) {
+      if (tweet.conversation_id !== tweet.id) {
         toLookUpTweets.push(tweet);
       }
       if (tweet.conversation_id == tweet.id) {
         tweet.conversation_id = null;
       }
-     
+
       toInsertTweets.push(tweet);
     });
     const promiseCheckAuthor = [];
@@ -73,11 +74,11 @@ const crawl = async (keyword, max_result) => {
       promiseInsertTweetsLookUp.push(
         insertSingleTweet(tweet, keyword, search_id)
       );
-      sleep(200)
+      sleep(200);
     });
     toInsertTweets.forEach((tweet, idx) => {
       promiseCheckAuthor.push(checkAuthor(tweet));
-      sleep(200)
+      sleep(200);
     });
     await Promise.allSettled(promiseCheckAuthor);
     await Promise.allSettled(promiseInsertTweetsLookUp);
@@ -97,8 +98,9 @@ const crawl = async (keyword, max_result) => {
       }
     });
     await Promise.allSettled(promiseUpdate);
-    sleep(200)
+    sleep(200);
     await Tweet.bulkCreate(filteredTweets);
+    console.log("crawl success", keyword, new Date().toLocaleTimeString());
   } catch (err) {
     console.error(err.message, "<< bulk create");
   }
@@ -188,5 +190,44 @@ const checkAuthor = async (tweet) => {
   }
 };
 
+const crawlTrending = async () => {
+  try {
+    const result = await axios.get(
+      "https://api.twitter.com/1.1/trends/place.json",
+      {
+        params: {
+          id: 23424846,
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+        },
+      }
+    );
+    const trends = result.data[0].trends;
+    const promises = trends.map(async (trend) => {
+      const findTrend = await Trend.findOne({
+        where: {
+          name: trend.name,
+        },
+      });
+      if (!findTrend) {
+        await Trend.create({
+          name: trend.name,
+          url: trend.url,
+          tweet_volume: trend.tweet_volume,
+        });
+      }
+    });
+  } catch (err) {
+    console.error(err.message, "<< trending");
+  }
+};
+const crawlTrend = cron.schedule("*/1 * * * *", async () => {
+  try {
+    await crawlTrending();
+  } catch (err) {
+    console.error(err.message, "<< crawlTrending");
+  }
+});
 const allSchedulers = {};
-module.exports = { allSchedulers, crawl };
+module.exports = { allSchedulers, crawl, crawlTrend };

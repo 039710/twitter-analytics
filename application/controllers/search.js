@@ -649,8 +649,8 @@ class Controller {
           }
         });
         // count sources
-        if (tweet.source.includes("App")) {
-          all_sources["Twitter Web App"] += 1;
+        if (tweet.source.includes("Web App")) {
+          all_sources["Twitter for Web App"] += 1;
         } else if (tweet.source.includes("iPhone")) {
           all_sources["Twitter for iPhone"] += 1;
         } else if (tweet.source.includes("Android")) {
@@ -745,10 +745,12 @@ class Controller {
           temp["public metrics"] =
             temp["public metrics"] + tweet.dataValues["public_metrics"][key];
         });
+        const random = Math.round(Math.random());
+        const sentiment = random ? "positive" : "negative";
         if (!frequency[tweet.created_time]) {
-          frequency[tweet.created_time] = [temp.tweet_id];
+          frequency[tweet.created_time] = [temp.tweet_id, sentiment];
         } else {
-          frequency[tweet.created_time].push(temp.tweet_id);
+          frequency[tweet.created_time].push(temp.tweet_id, sentiment);
         }
       });
       frequency = Object.keys(frequency)

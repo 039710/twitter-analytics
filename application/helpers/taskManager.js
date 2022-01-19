@@ -1,6 +1,6 @@
 const tasks = [];
-const {Scheduler} = require('../models');
-const { crawl } = require('../helpers/crawl');
+const { Scheduler } = require("../models");
+const { crawl } = require("../helpers/crawl");
 const add = (keyword, task) => {
   tasks.push({ keyword, task });
 };
@@ -11,15 +11,18 @@ const get = (keyword) => {
 
 const initiateServer = async () => {
   const schedulers = await Scheduler.findAll();
-  let seconds = 1
+  let seconds = 1;
   schedulers.forEach((scheduler) => {
-    if (scheduler.status === 'active') {
+    if (scheduler.status === "active") {
       const isFound = get(scheduler.keyword);
       if (!isFound) {
-        console.log('creating task');
-        const task = cron.schedule(`${seconds} */${scheduler.minute} * * * *`, async () => {
-          crawl(scheduler.keyword, scheduler.max_result);
-        });
+        const task = cron.schedule(
+          `${seconds} */${scheduler.minute} * * * *`,
+          async () => {
+            crawl(scheduler.keyword, scheduler.max_result);
+          }
+        );
+        console.log("creating task every", scheduler.minute, "minutes");
         add(scheduler.keyword, task);
         task.start();
       } else {
@@ -30,19 +33,22 @@ const initiateServer = async () => {
       if (isFound) {
         get(scheduler.keyword).task.stop();
       } else {
-        console.log('creating task');
-        const task = cron.schedule(`${seconds} */${scheduler.minute} * * * *`, async () => {
-          crawl(scheduler.keyword, scheduler.max_result);
-        });
+        console.log("creating task");
+        const task = cron.schedule(
+          `${seconds} */${scheduler.minute} * * * *`,
+          async () => {
+            crawl(scheduler.keyword, scheduler.max_result);
+          }
+        );
         add(scheduler.keyword, task);
         task.stop();
       }
     }
-    seconds += 8
+    seconds += 8;
   });
-}
+};
 module.exports = {
   add,
   get,
-  initiateServer
+  initiateServer,
 };

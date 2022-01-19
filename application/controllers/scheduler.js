@@ -61,12 +61,13 @@ class Controller {
   static async editStatus(req, res) {
     const id = req.params.id;
     const status = req.body.status;
+    const minute = req.body.minute ? req.body.minute : "1";
     try {
       const scheduler = await Scheduler.findOne({ where: { id } });
       if (!scheduler) {
         return res.status(404).json({ message: "Scheduler not found" });
       }
-      await scheduler.update({ status });
+      await scheduler.update({ status, minute });
       await scheduler.save();
       const isFound = TaskManager.get(scheduler.keyword);
       if (isFound) {
