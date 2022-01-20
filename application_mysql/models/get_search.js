@@ -23,6 +23,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
+      charset: "latin1",
+      collate: "latin1_swedish_ci",
+      tableName: "TW_Get_Searches",
       modelName: "Get_Search",
     }
   );

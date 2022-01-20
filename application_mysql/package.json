@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js",
-    "reset": "npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate && nodemon app.js"
+    "start": "node --max-old-space-size=4096 app.js",
+    "reset": "npx sequelize-cli db:migrate && nodemon app.js"
   },
   "keywords": [],
   "author": "",

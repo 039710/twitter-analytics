@@ -72,7 +72,14 @@ class Controller {
       const isFound = TaskManager.get(scheduler.keyword);
       if (isFound) {
         if (status === "active") {
-          TaskManager.get(scheduler.keyword).task.start();
+          TaskManager.get(scheduler.keyword).task.stop();
+          TaskManager.tasks = TaskManager.tasks.filter(
+            (task) => task.keyword !== scheduler.keyword
+          );
+          const task = cron.schedule(`*/${minute} * * * *`, async () => {
+            crawl(scheduler.keyword, scheduler.max_result);
+          });
+          task.start();
         } else {
           TaskManager.get(scheduler.keyword).task.stop();
         }

@@ -72,7 +72,8 @@ class Controller {
       const isFound = TaskManager.get(scheduler.keyword);
       if (isFound) {
         if (status === "active") {
-          TaskManager.get(scheduler.keyword).task.start();
+          const task = TaskManager.get(scheduler.keyword).task;
+          console.log(task);
         } else {
           TaskManager.get(scheduler.keyword).task.stop();
         }

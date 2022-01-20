@@ -51,4 +51,5 @@ module.exports = {
   add,
   get,
   initiateServer,
+  tasks,
 };

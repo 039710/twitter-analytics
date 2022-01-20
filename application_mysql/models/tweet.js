@@ -15,10 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       Tweet.belongsTo(models.Author, {
         foreignKey: "author_id",
       });
-    Tweet.belongsTo(models.Tweet, {
-      foreignKey: "conversation_id",
-      as: "conversation",
-    });
+      Tweet.belongsTo(models.Tweet, {
+        foreignKey: "conversation_id",
+        as: "conversation",
+      });
     }
   }
   Tweet.init(
@@ -50,9 +50,13 @@ module.exports = (sequelize, DataTypes) => {
       source: DataTypes.TEXT,
       text: DataTypes.TEXT,
       withheld: DataTypes.TEXT,
+      sentiment: DataTypes.STRING,
     },
     {
       sequelize,
+      charset: "latin1",
+      collate: "latin1_swedish_ci",
+      tableName: "TW_Tweets",
       modelName: "Tweet",
     }
   );

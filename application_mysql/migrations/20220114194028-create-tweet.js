@@ -1,7 +1,7 @@
 "use strict";
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable("Tweets", {
+    await queryInterface.createTable("TW_Tweets", {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -18,7 +18,7 @@ module.exports = {
       search_id: {
         type: Sequelize.BIGINT,
         references: {
-          model: "Get_Searches",
+          model: "TW_Get_Searches",
           key: "id",
         },
       },
@@ -28,7 +28,7 @@ module.exports = {
       author_id: {
         type: Sequelize.BIGINT,
         references: {
-          model: "Authors",
+          model: "TW_Authors",
           key: "id",
         },
       },
@@ -39,7 +39,7 @@ module.exports = {
         type: Sequelize.BIGINT,
         allowNull: true,
         references: {
-          model: "Tweets",
+          model: "TW_Tweets",
           key: "id",
         },
       },
@@ -76,6 +76,9 @@ module.exports = {
       text: {
         type: Sequelize.TEXT,
       },
+      sentiment : {
+        type : Sequelize.STRING,
+      },
       withheld: {
         type: Sequelize.TEXT,
       },
@@ -90,6 +93,6 @@ module.exports = {
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable("Tweets");
+    await queryInterface.dropTable("TW_Tweets");
   },
 };

@@ -74,11 +74,9 @@ const crawl = async (keyword, max_result) => {
       promiseInsertTweetsLookUp.push(
         insertSingleTweet(tweet, keyword, search_id)
       );
-      sleep(200);
     });
     toInsertTweets.forEach((tweet, idx) => {
       promiseCheckAuthor.push(checkAuthor(tweet));
-      sleep(200);
     });
     await Promise.allSettled(promiseCheckAuthor);
     await Promise.allSettled(promiseInsertTweetsLookUp);
@@ -98,8 +96,12 @@ const crawl = async (keyword, max_result) => {
       }
     });
     await Promise.allSettled(promiseUpdate);
-    sleep(200);
-    await Tweet.bulkCreate(filteredTweets);
+    // memory leaks
+    // await Tweet.bulkCreate(filteredTweets);
+    // another approach
+    filteredTweets.forEach((tweet) => {
+      Tweet.create(tweet);
+    });
     console.log("crawl success", keyword, new Date().toLocaleTimeString());
   } catch (err) {
     console.error(err.message, "<< bulk create");
@@ -136,14 +138,7 @@ const insertSingleTweet = async (tweet, keyword, search_id) => {
         // await insertSingleTweet(toInsertTweet, keyword, search_id);
       } else {
         await checkAuthor(toInsertTweet);
-        let found = await Tweet.findOne({
-          where: {
-            id: toInsertTweet.id,
-          },
-        });
-        if (!found) {
-          await Tweet.create(toInsertTweet);
-        }
+        await Tweet.create(toInsertTweet);
       }
     }
   } catch (err) {
@@ -204,7 +199,7 @@ const crawlTrending = async () => {
       }
     );
     const trends = result.data[0].trends;
-    const promises = trends.map(async (trend) => {
+    trends.map(async (trend) => {
       const findTrend = await Trend.findOne({
         where: {
           name: trend.name,
@@ -222,7 +217,7 @@ const crawlTrending = async () => {
     console.error(err.message, "<< trending");
   }
 };
-const crawlTrend = cron.schedule("*/1 * * * *", async () => {
+const crawlTrend = cron.schedule("*/5 * * * *", async () => {
   try {
     await crawlTrending();
   } catch (err) {
