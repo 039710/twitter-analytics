@@ -79,6 +79,9 @@ module.exports = {
       withheld: {
         type: Sequelize.TEXT,
       },
+      sentiment: {
+        type: Sequelize.STRING,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
