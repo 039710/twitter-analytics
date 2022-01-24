@@ -20,11 +20,13 @@ module.exports = (sequelize, DataTypes) => {
       newest_id: DataTypes.BIGINT,
       oldest_id: DataTypes.BIGINT,
       next_token: DataTypes.STRING,
+      created_at: DataTypes.DATE,
+      updated_at: DataTypes.DATE,
     },
     {
       sequelize,
-      charset: "latin1",
-      collate: "latin1_swedish_ci",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
       tableName: "TW_Get_Searches",
       modelName: "Get_Search",
     }

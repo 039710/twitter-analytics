@@ -20,6 +20,9 @@ module.exports = {
       name: {
         type: Sequelize.STRING,
       },
+      username: {
+        type: Sequelize.STRING,
+      },
       location: {
         type: Sequelize.STRING,
       },
@@ -38,11 +41,11 @@ module.exports = {
       tweet: {
         type: Sequelize.TEXT,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },

@@ -10,42 +10,48 @@ const get = (keyword) => {
 };
 
 const initiateServer = async () => {
-  const schedulers = await Scheduler.findAll();
-  let seconds = 1;
-  schedulers.forEach((scheduler) => {
-    if (scheduler.status === "active") {
-      const isFound = get(scheduler.keyword);
-      if (!isFound) {
-        const task = cron.schedule(
-          `${seconds} */${scheduler.minute} * * * *`,
-          async () => {
-            crawl(scheduler.keyword, scheduler.max_result);
+  try {
+    const schedulers = await Scheduler.findAll();
+    if (schedulers) {
+      let seconds = 1;
+      schedulers.forEach((scheduler) => {
+        if (scheduler.status === "active") {
+          const isFound = get(scheduler.keyword);
+          if (!isFound) {
+            const task = cron.schedule(
+              `${seconds} */${scheduler.minute} * * * *`,
+              async () => {
+                crawl(scheduler.keyword, scheduler.max_result);
+              }
+            );
+            console.log("creating task every", scheduler.minute, "minutes");
+            add(scheduler.keyword, task);
+            task.start();
+          } else {
+            get(scheduler.keyword).task.start();
           }
-        );
-        console.log("creating task every", scheduler.minute, "minutes");
-        add(scheduler.keyword, task);
-        task.start();
-      } else {
-        get(scheduler.keyword).task.start();
-      }
-    } else {
-      const isFound = get(scheduler.keyword);
-      if (isFound) {
-        get(scheduler.keyword).task.stop();
-      } else {
-        console.log("creating task");
-        const task = cron.schedule(
-          `${seconds} */${scheduler.minute} * * * *`,
-          async () => {
-            crawl(scheduler.keyword, scheduler.max_result);
+        } else {
+          const isFound = get(scheduler.keyword);
+          if (isFound) {
+            get(scheduler.keyword).task.stop();
+          } else {
+            console.log("creating task");
+            const task = cron.schedule(
+              `${seconds} */${scheduler.minute} * * * *`,
+              async () => {
+                crawl(scheduler.keyword, scheduler.max_result);
+              }
+            );
+            add(scheduler.keyword, task);
+            task.stop();
           }
-        );
-        add(scheduler.keyword, task);
-        task.stop();
-      }
+        }
+        seconds += 8;
+      });
     }
-    seconds += 8;
-  });
+  } catch (err) {
+    // console.log(err.message);
+  }
 };
 module.exports = {
   add,

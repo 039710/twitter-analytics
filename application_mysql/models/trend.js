@@ -16,11 +16,13 @@ module.exports = (sequelize, DataTypes) => {
       name: DataTypes.STRING,
       url: DataTypes.STRING,
       tweet_volume: DataTypes.INTEGER,
+      created_at: DataTypes.DATE,
+      updated_at: DataTypes.DATE,
     },
     {
       sequelize,
-      charset: "latin1",
-      collate: "latin1_swedish_ci",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
       tableName: "TW_Trends",
       modelName: "Trend",
     }

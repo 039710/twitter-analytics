@@ -51,11 +51,13 @@ module.exports = (sequelize, DataTypes) => {
       text: DataTypes.TEXT,
       withheld: DataTypes.TEXT,
       sentiment: DataTypes.STRING,
+      created_at: DataTypes.DATE,
+      updated_at: DataTypes.DATE,
     },
     {
       sequelize,
-      charset: "latin1",
-      collate: "latin1_swedish_ci",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
       tableName: "TW_Tweets",
       modelName: "Tweet",
     }

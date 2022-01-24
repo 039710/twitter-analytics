@@ -1,5 +1,6 @@
 const { Tweet, Get_Search, Author } = require("../models");
 const Sequelize = require("sequelize");
+const db = require("../models").sequelize;
 const axios = require("axios");
 const { getPagination, getPagingData } = require("../helpers/pagination");
 const { set } = require("express/lib/application");
@@ -24,7 +25,7 @@ class Controller {
       });
       res.status(200).json(result);
     } catch (err) {
-      console.log(err.message);
+      // console.log(err.message);
       res.status(500).json({ message: "Internal Server Error" });
     }
   }
@@ -92,7 +93,7 @@ class Controller {
             ],
           },
           limit: size ? size : 10,
-          order: [["createdAt", "DESC"]],
+          order: [["created_at", "DESC"]],
         });
 
         if (result.length == 0) {
@@ -168,7 +169,7 @@ class Controller {
           ],
           limit,
           offset,
-          order: [["createdAt", "DESC"]],
+          order: [["created_at", "DESC"]],
         });
         if (result.rows.length == 0)
           return res.status(404).json({ message: "Not found" });
@@ -182,7 +183,7 @@ class Controller {
         const response = getPagingData(result, page, limit);
         res.status(200).json(response);
       } catch (err) {
-        console.log("err", err);
+        // console.log("err", err);
         res.status(500).json({ message: "Internal Server Error" });
       }
     }
@@ -289,7 +290,7 @@ class Controller {
 
       return res.status(200).json(response);
     } catch (err) {
-      console.log("err", err);
+      // console.log("err", err);
       res.status(500).json({ message: err.message });
     }
   }
@@ -325,7 +326,7 @@ class Controller {
               model: Tweet,
               as: "conversation",
               attributes: {
-                exclude: ["createdAt", "updatedAt"],
+                exclude: ["created_at", "updatedAt"],
               },
               include: {
                 model: Author,
@@ -342,7 +343,7 @@ class Controller {
           ],
 
           limit: size ? size : 10,
-          order: [["createdAt", "DESC"]],
+          order: [["created_at", "DESC"]],
         });
         if (result.length == 0)
           return res.status(404).json({ message: "Not found" });
@@ -382,7 +383,7 @@ class Controller {
               model: Tweet,
               as: "conversation",
               attributes: {
-                exclude: ["createdAt", "updatedAt"],
+                exclude: ["created_at", "updatedAt"],
               },
               include: {
                 model: Author,
@@ -399,7 +400,7 @@ class Controller {
           ],
           limit,
           offset,
-          order: [["createdAt", "DESC"]],
+          order: [["created_at", "DESC"]],
         });
         if (result.rows.length == 0)
           return res.status(404).json({ message: "Not found" });
@@ -446,7 +447,7 @@ class Controller {
             model: Tweet,
             as: "conversation",
             attributes: {
-              exclude: ["createdAt", "updatedAt"],
+              exclude: ["created_at", "updatedAt"],
             },
             include: {
               model: Author,
@@ -461,7 +462,7 @@ class Controller {
             },
           },
         ],
-        order: [["createdAt", "ASC"]],
+        order: [["created_at", "ASC"]],
         limit: 1,
       });
       if (!result) return res.status(404).json({ message: "Not found" });
@@ -499,7 +500,7 @@ class Controller {
             model: Tweet,
             as: "conversation",
             attributes: {
-              exclude: ["createdAt", "updatedAt"],
+              exclude: ["created_at", "updatedAt"],
             },
             include: {
               model: Author,
@@ -514,7 +515,7 @@ class Controller {
             },
           },
         ],
-        order: [["createdAt", "DESC"]],
+        order: [["created_at", "DESC"]],
         limit: 1,
       });
       if (!result) return res.status(404).json({ message: "Not found" });
@@ -539,7 +540,7 @@ class Controller {
         include: {
           model: Author,
         },
-        order: [["createdAt", "ASC"]],
+        order: [["created_at", "ASC"]],
       });
       if (!firstCreated) return res.status(404).json({ message: "Not found" });
       const lastCreated = await Tweet.findOne({
@@ -548,7 +549,7 @@ class Controller {
             [Sequelize.Op.like]: `%${keyword}%`,
           },
         },
-        order: [["createdAt", "desc"]],
+        order: [["created_at", "desc"]],
       });
       const { created_time: startTime } = firstCreated;
       const { created_time: endTime } = lastCreated;
@@ -581,7 +582,7 @@ class Controller {
           [Sequelize.Op.like]: `%${keyword}%`,
         },
       },
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
     };
     if (!keyword) {
       return res.status(400).json({ message: "Please provide a keyword" });
@@ -802,7 +803,7 @@ class Controller {
       };
     }
     if (start_date && end_date) {
-      query.where.createdAt = {
+      query.where.created_at = {
         [Sequelize.Op.between]: [start_date, end_date],
       };
     }
@@ -835,33 +836,107 @@ class Controller {
     }
   }
 
-  static async test(req, res) {
+  static async getWordCloud(req, res) {
+    try {
+      const result = await Tweet.findAll({
+        where: {
+          created_time: {
+            [Sequelize.Op.like]: `%${req.params.date}%`,
+          },
+        },
+        attributes: ["text"],
+      });
+      const word_cloud = result.reduce((acc, tweet) => {
+        // let words = words.replace(/[^a-zA-Z]/g, "").toLowerCase();
+        let words = tweet.text.replace(/[^a-zA-Z]/g, " ").toLowerCase();
+        const filter = ["@", "http", "https", "\n", "rt", "RT", "co"];
+        words = words.split(" ").filter((word) => {
+          if (word.length > 1) {
+            return !filter.includes(word);
+          }
+        });
+
+        words.forEach((word) => {
+          if (word) {
+            if (acc[word]) {
+              acc[word] += 1;
+            } else {
+              acc[word] = 1;
+            }
+          }
+        });
+        return acc;
+      }, {});
+      const response = [];
+
+      Object.keys(word_cloud).forEach((key) => {
+        response.push({
+          text: key,
+          count: word_cloud[key],
+        });
+      });
+      response.sort((a, b) => {
+        return b.count - a.count;
+      });
+      response.splice(100);
+      res.status(200).json(response);
+    } catch (err) {
+      console.log(err.message);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  static async getWordCloudByKeyword(req, res) {
     const keyword = req.query.keyword;
-    const result = await Tweet.findAll({
+    const query = {
       where: {
         text: {
           [Sequelize.Op.like]: `%${keyword}%`,
         },
       },
-      include: [
-        {
-          model: Author,
-        },
-        {
-          model: Tweet,
-          as: "conversation",
-        },
-      ],
-      limit: 20,
-      attributes: [
-        "id",
-        "text",
-        "created_time",
-        "author_id",
-        "conversation_id",
-      ],
-    });
-    res.status(200).json(result);
+      attributes: ["text"],
+    };
+    if (!keyword) {
+      return res.status(400).json({ message: "Please provide a keyword" });
+    }
+    try {
+      const result = await Tweet.findAll(query);
+      const word_cloud = result.reduce((acc, tweet) => {
+        // let words = words.replace(/[^a-zA-Z]/g, "").toLowerCase();
+        let words = tweet.text.replace(/[^a-zA-Z]/g, " ").toLowerCase();
+        const filter = ["@", "http", "\n", "rt"];
+        words = words.split(" ").filter((word) => {
+          return !filter.includes(word);
+        });
+        // words = words.("rt", "");
+        words.forEach((word) => {
+          if (word) {
+            if (acc[word]) {
+              acc[word] += 1;
+            } else {
+              acc[word] = 1;
+            }
+          }
+        });
+        return acc;
+      }, {});
+      const response = [];
+
+      Object.keys(word_cloud).forEach((key) => {
+        response.push({
+          text: key,
+          count: word_cloud[key],
+        });
+      });
+      response.sort((a, b) => {
+        return b.count - a.count;
+      });
+      response.splice(100);
+      res.status(200).json(response);
+    } catch (err) {
+      console.log(err.message);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
   }
 }
 

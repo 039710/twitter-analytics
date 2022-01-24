@@ -23,6 +23,8 @@ module.exports = (sequelize, DataTypes) => {
       status: DataTypes.STRING,
       max_result: DataTypes.INTEGER,
       minute: DataTypes.INTEGER,
+      created_at: DataTypes.DATE,
+      updated_at: DataTypes.DATE,
     },
     {
       hooks: {
@@ -31,8 +33,8 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       sequelize,
-      charset: "latin1",
-      collate: "latin1_swedish_ci",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
       tableName: "TW_Schedulers",
       modelName: "Scheduler",
     }

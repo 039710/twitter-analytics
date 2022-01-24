@@ -32,7 +32,6 @@ const toConvertJson = [
   "geo",
 ];
 const crawl = async (keyword, max_result) => {
-  console.log(max_result, "ini max_result");
   try {
     const result = await twitterApi.get("/tweets/search/recent", {
       params: {
@@ -96,12 +95,11 @@ const crawl = async (keyword, max_result) => {
       }
     });
     await Promise.allSettled(promiseUpdate);
-    // memory leaks
-    // await Tweet.bulkCreate(filteredTweets);
-    // another approach
-    filteredTweets.forEach((tweet) => {
-      Tweet.create(tweet);
+    const promiseInsertTweets = filteredTweets.map(async (tweet, idx) => {
+      await Tweet.create(tweet);
     });
+    await Promise.allSettled(promiseInsertTweets);
+
     console.log("crawl success", keyword, new Date().toLocaleTimeString());
   } catch (err) {
     console.error(err.message, "<< bulk create");
@@ -123,7 +121,7 @@ const insertSingleTweet = async (tweet, keyword, search_id) => {
             "created_at,description,entities,id,location,name,pinned_tweet_id,profile_image_url,protected,public_metrics,url,username,verified,withheld",
         },
       });
-      const toInsertTweet = await result.data.data;
+      let toInsertTweet = await result.data.data;
       toConvertJson.forEach((column) => {
         if (toInsertTweet[column]) {
           toInsertTweet[column] = JSON.stringify(toInsertTweet[column]);
@@ -134,11 +132,18 @@ const insertSingleTweet = async (tweet, keyword, search_id) => {
       toInsertTweet.created_time = toInsertTweet.created_at;
 
       if (toInsertTweet.conversation_id !== toInsertTweet.id) {
-        // await checkAuthor(toInsertTweet);
-        // await insertSingleTweet(toInsertTweet, keyword, search_id);
-      } else {
         await checkAuthor(toInsertTweet);
-        await Tweet.create(toInsertTweet);
+        await insertSingleTweet(toInsertTweet, keyword, search_id);
+      } else if (toInsertTweet.conversation_id == toInsertTweet.id) {
+        await checkAuthor(toInsertTweet);
+        let found = await Tweet.findOne({
+          where: {
+            id: toInsertTweet.conversation_id,
+          },
+        });
+        if (!found) {
+          await Tweet.create(toInsertTweet);
+        }
       }
     }
   } catch (err) {

@@ -16,17 +16,17 @@ module.exports = {
       minute: {
         type: Sequelize.INTEGER,
       },
-      max_result :{
+      max_result: {
         type: Sequelize.INTEGER,
       },
       status: {
         type: Sequelize.STRING,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },

@@ -76,17 +76,17 @@ module.exports = {
       text: {
         type: Sequelize.TEXT,
       },
-      sentiment : {
-        type : Sequelize.STRING,
+      sentiment: {
+        type: Sequelize.STRING,
       },
       withheld: {
         type: Sequelize.TEXT,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },

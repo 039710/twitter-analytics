@@ -5,4 +5,6 @@ router.get("/first-tweet", controller.firstTweetByKeyword);
 router.get("/last-tweet", controller.lastTweetByKeyword);
 router.get("/duration", controller.durationTrend);
 router.get("/top-tweet", controller.topTweetByKeyword);
+router.get("/wordcloud/:date", controller.getWordCloud);
+router.get("/wordcloud", controller.getWordCloudByKeyword);
 module.exports = router;
